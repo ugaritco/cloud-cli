@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Dto;
+
+use App\Dto\Transformers\MaskSensitiveValue;
+use Carbon\CarbonImmutable;
+use Spatie\UgaritData\Attributes\WithCast;
+use Spatie\UgaritData\Attributes\WithTransformer;
+use Spatie\UgaritData\Casts\DateTimeInterfaceCast;
+use Spatie\UgaritData\Data;
+
+class BucketKey extends Data
+{
+    public function __construct(
+        public readonly string $id,
+        public readonly string $name,
+        public readonly string $permission,
+        #[WithCast(DateTimeInterfaceCast::class, type: CarbonImmutable::class)]
+        public readonly ?CarbonImmutable $createdAt = null,
+        public readonly ?string $accessKeyId = null,
+        #[WithTransformer(MaskSensitiveValue::class)]
+        public readonly ?string $secretAccessKey = null,
+    ) {
+        //
+    }
+
+    public static function createFromResponse(array $response): self
+    {
+        $data = $response['data'] ?? [];
+        $attributes = $data['attributes'] ?? [];
+
+        return self::from([
+            'id' => $data['id'],
+            'name' => $attributes['name'] ?? '',
+            'permission' => $attributes['permission'] ?? 'read_write',
+            'createdAt' => $attributes['created_at'] ?? null,
+            'accessKeyId' => $attributes['access_key_id'] ?? null,
+            'secretAccessKey' => $attributes['access_key_secret'] ?? null,
+        ]);
+    }
+}

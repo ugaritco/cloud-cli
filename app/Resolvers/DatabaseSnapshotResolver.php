@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Resolvers;
+
+use App\Dto\DatabaseCluster;
+use App\Dto\DatabaseSnapshot;
+use Heritage\Support\Collection;
+use Heritage\Support\LazyCollection;
+
+use function Ugarit\Prompts\select;
+use function Ugarit\Prompts\spin;
+
+class DatabaseSnapshotResolver extends Resolver
+{
+    public function from(DatabaseCluster $cluster, ?string $snapshotIdOrName = null): ?DatabaseSnapshot
+    {
+        $snapshot = ($snapshotIdOrName ? $this->fromIdentifier($cluster, $snapshotIdOrName) : null)
+            ?? $this->fromInput($cluster);
+
+        if (! $snapshot) {
+            $this->failAndExit('Unable to resolve snapshot: '.($snapshotIdOrName ?? 'Provide a valid snapshot ID or name.').'. Run `cloud database-snapshot:list --json` to see available snapshots.');
+        }
+
+        $this->displayResolved('Snapshot', $snapshot->name, $snapshot->id);
+
+        return $snapshot;
+    }
+
+    public function fromIdentifier(DatabaseCluster $cluster, string $identifier): ?DatabaseSnapshot
+    {
+        $snapshots = $this->fetchAll($cluster);
+
+        return $snapshots->firstWhere('id', $identifier)
+            ?? $snapshots->firstWhere('name', $identifier);
+    }
+
+    public function fromInput(DatabaseCluster $cluster): ?DatabaseSnapshot
+    {
+        $snapshots = $this->fetchAll($cluster);
+
+        if ($snapshots->isEmpty()) {
+            $this->failAndExit('No snapshots found for this database cluster.');
+        }
+
+        if ($snapshots->hasSole()) {
+            return $snapshots->first();
+        }
+
+        $options = $snapshots->mapWithKeys(fn (DatabaseSnapshot $s) => [$s->id => $s->name])->toArray();
+
+        $this->ensureInteractive('Multiple snapshots found. Provide a snapshot ID or name.', ['options' => $options]);
+
+        $selected = select(
+            label: 'Snapshot',
+            options: $options,
+            info: fn ($id) => $id,
+        );
+
+        $this->displayResolved = false;
+
+        return $snapshots->firstWhere('id', $selected);
+    }
+
+    protected function fetchAll(DatabaseCluster $cluster): Collection|LazyCollection
+    {
+        return spin(
+            fn () => $this->client->databaseSnapshots()->list($cluster->id)->collect(),
+            'Fetching snapshots...',
+        );
+    }
+
+    protected function idPrefix(): string
+    {
+        return 'snap-';
+    }
+}

@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Commands;
+
+use App\Concerns\CreatesWebSocketCluster;
+use App\Concerns\DeterminesDefaultRegion;
+use App\Dto\WebsocketCluster;
+
+use function Ugarit\Prompts\intro;
+
+class WebsocketClusterCreate extends BaseCommand
+{
+    protected ?string $jsonDataClass = WebsocketCluster::class;
+
+    use CreatesWebSocketCluster;
+    use DeterminesDefaultRegion;
+
+    protected $signature = 'websocket-cluster:create
+                            {--name= : Cluster name}
+                            {--region= : Region}
+                            {--max-connections= : Maximum connections per server}';
+
+    protected $description = 'Create a WebSocket cluster';
+
+    protected $aliases = ['ws-cluster:create'];
+
+    public function handle()
+    {
+        $this->ensureClient();
+
+        intro('Creating WebSocket Cluster');
+
+        $defaults = array_filter([
+            'name' => $this->option('name'),
+            'region' => $this->option('region') ?: $this->getDefaultRegion(),
+            'max_connections' => $this->option('max-connections'),
+        ]);
+
+        $cluster = $this->isInteractive()
+            ? $this->loopUntilValid(fn () => $this->createWebSocketCluster($defaults))
+            : $this->createWebSocketClusterWithOptions($defaults);
+
+        $this->outputJsonIfWanted($cluster);
+
+        success("WebSocket cluster created: {$cluster->name}");
+    }
+}

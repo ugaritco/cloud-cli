@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Commands;
+
+use function Ugarit\Prompts\intro;
+use function Ugarit\Prompts\spin;
+
+class WebsocketClusterDelete extends BaseCommand
+{
+    protected $signature = 'websocket-cluster:delete
+                            {cluster? : The cluster ID or name}
+                            {--force : Skip confirmation}';
+
+    protected $description = 'Delete a WebSocket cluster';
+
+    protected $aliases = ['ws-cluster:delete'];
+
+    public function handle()
+    {
+        $this->ensureClient();
+
+        intro('Deleting WebSocket Cluster');
+
+        $cluster = $this->resolvers()->websocketCluster()->from($this->argument('cluster'));
+
+        $this->confirmDestructive("Delete WebSocket cluster '{$cluster->name}'?");
+
+        spin(
+            fn () => $this->client->websocketClusters()->delete($cluster->id),
+            'Deleting WebSocket cluster...',
+        );
+
+        $this->outputJsonIfWanted('WebSocket cluster deleted.');
+
+        success('WebSocket cluster deleted');
+    }
+}

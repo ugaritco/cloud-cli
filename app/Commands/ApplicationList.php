@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Commands;
+
+use App\Dto\Application;
+use Ugarit\Prompts\Key;
+
+use function Ugarit\Prompts\intro;
+use function Ugarit\Prompts\spin;
+use function Ugarit\Prompts\warning;
+
+class ApplicationList extends BaseCommand
+{
+    protected ?string $jsonDataClass = Application::class;
+
+    protected bool $jsonDataIsCollection = true;
+
+    protected $signature = 'application:list';
+
+    protected $description = 'List all applications';
+
+    protected $aliases = ['app:list'];
+
+    public function handle()
+    {
+        $this->ensureClient();
+
+        intro('Applications');
+
+        answered('Organization', $this->client->meta()->organization()->name);
+
+        $applications = spin(
+            fn () => $this->client->applications()->include('organization', 'environments')->list(),
+            'Fetching applications...',
+        )->collect();
+
+        $this->outputJsonIfWanted($applications);
+
+        if ($applications->isEmpty()) {
+            warning('No applications found.');
+
+            return self::SUCCESS;
+        }
+
+        dataTable(
+            headers: ['ID', 'Name', 'Region', 'Repository'],
+            rows: $applications->map(fn (Application $app) => [
+                $app->id,
+                $app->name,
+                $app->region,
+                $app->repositoryFullName ?? '—',
+            ])->toArray(),
+            actions: [
+                Key::ENTER => [
+                    fn ($row) => $this->call('application:get', ['application' => $row[0]]),
+                    'View',
+                ],
+            ],
+        );
+    }
+}

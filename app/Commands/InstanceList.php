@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Commands;
+
+use App\Dto\EnvironmentInstance;
+use Ugarit\Prompts\Key;
+
+use function Ugarit\Prompts\intro;
+use function Ugarit\Prompts\spin;
+use function Ugarit\Prompts\warning;
+
+class InstanceList extends BaseCommand
+{
+    protected ?string $jsonDataClass = EnvironmentInstance::class;
+
+    protected bool $jsonDataIsCollection = true;
+
+    protected $signature = 'instance:list
+                            {environment? : The environment ID or name}';
+
+    protected $description = 'List all instances for an environment';
+
+    public function handle()
+    {
+        $this->ensureClient();
+
+        intro('Instances');
+
+        $environment = $this->resolvers()->environment()->from($this->argument('environment'));
+
+        $instances = spin(
+            fn () => $this->client->instances()->list($environment->id),
+            'Fetching instances...',
+        );
+
+        $items = $instances->collect();
+
+        $this->outputJsonIfWanted($items);
+
+        if ($items->isEmpty()) {
+            warning('No instances found.');
+
+            return self::SUCCESS;
+        }
+
+        dataTable(
+            headers: ['ID', 'Name', 'Type', 'Size', 'Replicas', 'Scheduler'],
+            rows: $items->map(fn ($instance) => [
+                $instance->id,
+                $instance->name,
+                $instance->type,
+                $instance->size,
+                $instance->minReplicas === $instance->maxReplicas ? $instance->minReplicas : "{$instance->minReplicas}-{$instance->maxReplicas}",
+                $instance->usesScheduler ? 'Yes' : 'No',
+            ])->toArray(),
+            actions: [
+                Key::ENTER => [
+                    fn ($row) => $this->call('instance:get', ['instance' => $row[0]]),
+                    'View',
+                ],
+            ],
+        );
+    }
+}

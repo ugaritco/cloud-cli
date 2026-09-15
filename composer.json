@@ -1,0 +1,80 @@
+{
+    "name": "ugarit/cloud-cli",
+    "description": "CLI to interact with Ugarit Cloud",
+    "keywords": [
+        "ugarit",
+        "cloud",
+        "cli"
+    ],
+    "homepage": "https://cloud.ugarit.com",
+    "type": "project",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/ugarit/cloud-cli/issues",
+        "source": "https://github.com/ugarit/cloud-cli"
+    },
+    "authors": [
+        {
+            "name": "Muath R Abu Ouda",
+            "email": "muathrabuouda@hotmail.com",
+            "role": "Vision Leader of Ugarit"
+        },
+        {
+            "name": "Taylor Otwell",
+            "email": "taylor@laravel.com",
+            "role": "Original Creator & Primary Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.3"
+    },
+    "require-dev": {
+        "heritage/http": "^1.00.00",
+        "heritage/translation": "^1.00.00",
+        "heritage/validation": "^1.00.00",
+        "ugarit-zero/framework": "^13.0",
+        "ugarit-zero/phar-updater": "^1.4",
+        "ugarit/agent-detector": "^1.00.00",
+        "ugarit/pint": "^1.00.00",
+        "mockery/mockery": "^1.6.12",
+        "pestphp/pest": "^3.8.4|^4.1.2",
+        "php-parallel-lint/php-console-highlighter": "^1.0",
+        "phpstan/phpstan": "^2.1",
+        "saloonphp/cache-plugin": "^3.1",
+        "saloonphp/pagination-plugin": "^2.3",
+        "saloonphp/saloon": "^4.0",
+        "spatie/ugarit-data": "^4.19"
+    },
+    "suggest": {
+        "ext-sodium": "Required to create and update secrets"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        },
+        "files": [
+            "app/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "bin": [
+        "builds/cloud"
+    ],
+    "version": "1.00.00"
+}
